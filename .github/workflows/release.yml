@@ -1,0 +1,79 @@
+# Builds Transcriber for Windows when a version tag (v1.2.3) is pushed, attests the installers
+# (build provenance), and creates a draft GitHub release to review and publish.
+#
+# Two variants: "gpu" runs Whisper on the GPU through Vulkan (Intel, AMD and NVIDIA), "cpu" works everywhere.
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions: {}
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.check.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check tag matches app version
+        id: check
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          package="$(node -p 'require("./package.json").version')"
+          tauri="$(node -p 'require("./src-tauri/tauri.conf.json").version')"
+          cargo="$(sed -n 's/^version = "\(.*\)"/\1/p' src-tauri/Cargo.toml | head -n 1)"
+          for pair in "package.json:$package" "src-tauri/tauri.conf.json:$tauri" "src-tauri/Cargo.toml:$cargo"; do
+            if [ "${pair#*:}" != "$tag" ]; then
+              echo "::error::Tag $GITHUB_REF_NAME does not match version ${pair#*:} in ${pair%%:*}"
+              exit 1
+            fi
+          done
+          echo "version=$tag" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: version
+    permissions:
+      contents: read
+    uses: ./.github/workflows/build.yml
+
+  release:
+    needs: [version, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: Transcriber-windows-*
+          path: dist
+
+      - name: Collect installers
+        run: |
+          mkdir release
+          find dist -type f \( -name '*.exe' -o -name '*.msi' \) -exec mv {} release/ \;
+          ls -l release
+
+      - name: Generate artifact attestation
+        uses: actions/attest@v4
+        with:
+          subject-path: release/*
+
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "Transcriber for Windows ${{ needs.version.outputs.version }}" \
+            --draft \
+            --verify-tag \
+            --generate-notes \
+            release/*

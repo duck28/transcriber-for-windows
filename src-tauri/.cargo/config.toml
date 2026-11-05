@@ -1,0 +1,6 @@
+# whisper-rs-sys builds whisper.cpp with the cmake crate, which replaces CMake's Release flags with cc's.
+# With MSVC those contain no optimization level, so whisper.cpp ended up unoptimized (/Od) and Whisper
+# ran 20-50 times slower than it should. The cmake crate strips /O flags from CFLAGS/CXXFLAGS, so pass
+# them through CL instead, which cl.exe reads itself and prepends to its command line.
+[env]
+CL = "/O2 /Ob2"

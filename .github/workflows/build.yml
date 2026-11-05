@@ -75,8 +75,9 @@ jobs:
         run: cargo test
         working-directory: src-tauri
 
+      # PowerShell, not bash: in bash, Git's /usr/bin/link would shadow MSVC's link.exe.
       - name: Build installers
-        shell: bash
+        shell: pwsh
         run: npx tauri build ${{ matrix.variant == 'gpu' && '--features vulkan' || '' }}
 
       # Both variants produce the same file names, so add the variant to them.

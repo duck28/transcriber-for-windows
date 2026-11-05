@@ -65,6 +65,8 @@ npx tauri build --features vulkan   # or without --features vulkan for CPU only
 
 The installers end up in `src-tauri/target/release/bundle/` (`nsis/*.exe` and `msi/*.msi`).
 
+If the GPU build stops in `whisper-rs-sys` with *No CMAKE_C_COMPILER could be found* or *C1041: cannot open program database*, the build folder is too deep for Windows' 260-character path limit (whisper.cpp builds its Vulkan shader generator several folders down). Build into a short folder instead, for example `$env:CARGO_TARGET_DIR = "C:\t"`; the installers then end up in `C:\t\release\bundle\`.
+
 - `npx tauri dev` runs the app with live reload.
 - `npm run dev` opens the interface in a browser with a simulated backend (sample transcription, fake files and devices), which is enough to work on the design, also on a Mac. `http://localhost:1420/#settings` shows the Settings window.
 - `cargo test` (in `src-tauri/`) runs the unit tests.

@@ -80,7 +80,7 @@ jobs:
           for f in msi/*.msi; do mv "$f" "$(echo "$f" | sed -E 's/_x64_/_x64_${{ matrix.variant }}_/')"; done
           ls -l nsis msi
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: Transcriber-windows-${{ matrix.variant }}
           if-no-files-found: error

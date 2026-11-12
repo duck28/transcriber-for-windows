@@ -25,7 +25,7 @@ hound = "3.5"
 reqwest = { version = "0.13", default-features = false, features = ["native-tls", "stream"] }
 futures-util = "0.3"
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "process", "io-util", "time", "fs"] }
-dirs = "6"
+dirs = "7"
 regex = "1"
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
 trash = "5"
